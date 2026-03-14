@@ -1,5 +1,5 @@
 import React, { act } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';
@@ -12,8 +12,8 @@ const server = setupServer(
     return res(
       ctx.status(200),
       ctx.json([
-        { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0 },
-        { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1 },
+        { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', priority: 'P1', completed: 0 },
+        { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', priority: 'P3', completed: 1 },
       ])
     );
   }),
@@ -34,6 +34,7 @@ const server = setupServer(
         title,
         description: req.body.description || '',
         due_date: req.body.due_date || null,
+        priority: req.body.priority || 'P3',
         completed: 0,
       })
     );
@@ -43,7 +44,7 @@ const server = setupServer(
   rest.put('/api/tasks/:id', (req, res, ctx) => {
     return res(
       ctx.status(200),
-      ctx.json({ ...req.body, id: Number(req.params.id), completed: 0 })
+      ctx.json({ ...req.body, priority: req.body.priority || 'P3', id: Number(req.params.id), completed: 0 })
     );
   }),
 
@@ -88,8 +89,8 @@ describe('TODO App', () => {
 
   test('adds a new task', async () => {
     let tasks = [
-      { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', completed: 0 },
-      { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', completed: 1 },
+      { id: 1, title: 'Test Task 1', description: 'Desc 1', due_date: '2025-09-30', priority: 'P1', completed: 0 },
+      { id: 2, title: 'Test Task 2', description: 'Desc 2', due_date: '2025-10-01', priority: 'P3', completed: 1 },
     ];
     server.use(
       rest.get('/api/tasks', (req, res, ctx) => {
@@ -102,6 +103,7 @@ describe('TODO App', () => {
           title,
           description: description || '',
           due_date: req.body.due_date || null,
+          priority: req.body.priority || 'P3',
           completed: 0,
         };
         tasks = [...tasks, newTask];
@@ -115,11 +117,59 @@ describe('TODO App', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Task 1')).toBeInTheDocument();
     });
-    await user.type(screen.getByTestId('title-input'), 'New Test Task');
-    await user.type(screen.getByTestId('description-input'), 'Task description');
+    fireEvent.change(screen.getByTestId('title-input'), { target: { value: 'New Test Task' } });
+    fireEvent.change(screen.getByTestId('description-input'), { target: { value: 'Task description' } });
     await user.click(screen.getByTestId('submit-task'));
     await waitFor(() => {
       expect(screen.getByText(/New Test Task/i)).toBeInTheDocument();
+    });
+  });
+
+  test('uses P3 as the default priority for new tasks', async () => {
+    let capturedPriority;
+
+    server.use(
+      rest.post('/api/tasks', (req, res, ctx) => {
+        capturedPriority = req.body.priority;
+        return res(
+          ctx.status(201),
+          ctx.json({
+            id: 3,
+            title: req.body.title,
+            description: req.body.description || '',
+            due_date: req.body.due_date || null,
+            priority: req.body.priority || 'P3',
+            completed: 0,
+          })
+        );
+      })
+    );
+
+    const user = userEvent.setup();
+    await act(async () => {
+      render(<App />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Task 1')).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByTestId('title-input'), { target: { value: 'Priority Default Task' } });
+    await user.click(screen.getByTestId('submit-task'));
+
+    await waitFor(() => {
+      expect(capturedPriority).toBe('P3');
+    });
+  });
+
+  test('renders priority badges from task data', async () => {
+    await act(async () => {
+      render(<App />);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('P1')).toBeInTheDocument();
+      expect(screen.getAllByText('P3').length).toBeGreaterThan(0);
     });
   });
 

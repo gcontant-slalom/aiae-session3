@@ -3,6 +3,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 const Database = require('better-sqlite3');
 
+const VALID_PRIORITIES = new Set(['P1', 'P2', 'P3']);
+
 // Initialize express app
 const app = express();
 
@@ -46,6 +48,7 @@ db.exec(`
     title TEXT NOT NULL,
     description TEXT,
     due_date DATE,
+    priority TEXT NOT NULL DEFAULT 'P3' CHECK(priority IN ('P1', 'P2', 'P3')),
     completed BOOLEAN DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )
@@ -74,6 +77,14 @@ function buildTaskQuery({ completed, search }) {
   };
 }
 
+function normalizePriority(priority) {
+  if (priority === undefined || priority === null || priority === '') {
+    return 'P3';
+  }
+
+  return VALID_PRIORITIES.has(priority) ? priority : null;
+}
+
 // GET /api/tasks (list, filter, search, sort)
 app.get('/api/tasks', (req, res) => {
   try {
@@ -92,11 +103,15 @@ app.get('/api/tasks', (req, res) => {
 app.post('/api/tasks', (req, res) => {
   try {
     const { title, description, due_date } = req.body;
+    const priority = normalizePriority(req.body.priority);
     if (!title || typeof title !== 'string' || title.trim() === '') {
       return res.status(400).json({ error: 'Task title is required' });
     }
-    const stmt = db.prepare('INSERT INTO tasks (title, description, due_date) VALUES (?, ?, ?)');
-    const result = stmt.run(title, description || '', due_date || null);
+    if (!priority) {
+      return res.status(400).json({ error: 'Priority must be one of P1, P2, or P3' });
+    }
+    const stmt = db.prepare('INSERT INTO tasks (title, description, due_date, priority) VALUES (?, ?, ?, ?)');
+    const result = stmt.run(title, description || '', due_date || null, priority);
     const newTask = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
     res.status(201).json(newTask);
   } catch (error) {
@@ -121,11 +136,15 @@ app.get('/api/tasks/:id', (req, res) => {
 app.put('/api/tasks/:id', (req, res) => {
   try {
     const { title, description, due_date } = req.body;
+    const priority = normalizePriority(req.body.priority);
     if (!title || typeof title !== 'string' || title.trim() === '') {
       return res.status(400).json({ error: 'Task title is required' });
     }
-    const stmt = db.prepare('UPDATE tasks SET title = ?, description = ?, due_date = ? WHERE id = ?');
-    const result = stmt.run(title, description || '', due_date || null, req.params.id);
+    if (!priority) {
+      return res.status(400).json({ error: 'Priority must be one of P1, P2, or P3' });
+    }
+    const stmt = db.prepare('UPDATE tasks SET title = ?, description = ?, due_date = ?, priority = ? WHERE id = ?');
+    const result = stmt.run(title, description || '', due_date || null, priority, req.params.id);
     if (result.changes === 0) return res.status(404).json({ error: 'Task not found' });
     const updatedTask = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
     res.json(updatedTask);

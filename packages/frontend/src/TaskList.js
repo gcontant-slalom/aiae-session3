@@ -6,6 +6,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
 
+const PRIORITY_STYLES = {
+  P1: { label: 'P1', color: '#d32f2f' },
+  P2: { label: 'P2', color: '#ef6c00' },
+  P3: { label: 'P3', color: '#757575' },
+};
+
 function TaskList({ onEdit }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +130,10 @@ function TaskList({ onEdit }) {
           </Box>
         )}
         {tasks.map((task, index) => (
+          (() => {
+            const priority = PRIORITY_STYLES[task.priority] || PRIORITY_STYLES.P3;
+
+            return (
           <ListItem 
             key={task.id} 
             sx={{ 
@@ -164,17 +174,30 @@ function TaskList({ onEdit }) {
             />
             <ListItemText
               primary={
-                <Typography 
-                  variant="body2"
-                  sx={{ 
-                    textDecoration: task.completed ? 'line-through' : 'none', 
-                    color: task.completed ? '#9e9e9e' : '#212121',
-                    fontWeight: task.completed ? 400 : 600,
-                    fontSize: '1rem'
-                  }}
-                >
-                  {task.title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', pr: 2 }}>
+                  <Chip
+                    label={priority.label}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      backgroundColor: priority.color,
+                      color: 'white'
+                    }}
+                  />
+                  <Typography 
+                    variant="body2"
+                    sx={{ 
+                      textDecoration: task.completed ? 'line-through' : 'none', 
+                      color: task.completed ? '#9e9e9e' : '#212121',
+                      fontWeight: task.completed ? 400 : 600,
+                      fontSize: '1rem'
+                    }}
+                  >
+                    {task.title}
+                  </Typography>
+                </Box>
               }
               secondary={
                 task.description && (
@@ -260,6 +283,8 @@ function TaskList({ onEdit }) {
               </Box>
             </Box>
           </ListItem>
+            );
+          })()
         ))}
       </List>
     </Paper>

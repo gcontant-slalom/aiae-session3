@@ -1,12 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Paper, Typography, Box } from '@mui/material';
+import { TextField, Button, Paper, Typography, Box, FormControl, InputLabel, Select, MenuItem, Chip } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SaveIcon from '@mui/icons-material/Save';
+
+const PRIORITY_OPTIONS = [
+  { value: 'P1', label: 'P1', color: '#d32f2f' },
+  { value: 'P2', label: 'P2', color: '#ef6c00' },
+  { value: 'P3', label: 'P3', color: '#757575' },
+];
+
+function PriorityChip({ priority }) {
+  const option = PRIORITY_OPTIONS.find(({ value }) => value === priority) || PRIORITY_OPTIONS[2];
+
+  return (
+    <Chip
+      label={option.label}
+      size="small"
+      sx={{
+        height: 22,
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        backgroundColor: option.color,
+        color: '#fff'
+      }}
+    />
+  );
+}
 
 function TaskForm({ onSave, initialTask }) {
   const [title, setTitle] = useState(initialTask?.title || '');
   const [description, setDescription] = useState(initialTask?.description || '');
   const [dueDate, setDueDate] = useState(initialTask?.due_date || '');
+  const [priority, setPriority] = useState(initialTask?.priority || 'P3');
   const [error, setError] = useState(null);
 
   // Helper to normalize date string to YYYY-MM-DD format
@@ -30,10 +55,12 @@ function TaskForm({ onSave, initialTask }) {
       setTitle(initialTask.title || '');
       setDescription(initialTask.description || '');
       setDueDate(normalizeDateString(initialTask.due_date));
+      setPriority(initialTask.priority || 'P3');
     } else {
       setTitle('');
       setDescription('');
       setDueDate('');
+      setPriority('P3');
     }
   }, [initialTask]);
 
@@ -44,10 +71,11 @@ function TaskForm({ onSave, initialTask }) {
       return;
     }
     setError(null);
-    await onSave({ title, description, due_date: dueDate });
+    await onSave({ title, description, due_date: dueDate, priority });
     setTitle('');
     setDescription('');
     setDueDate('');
+    setPriority('P3');
   };
 
   return (
@@ -143,6 +171,47 @@ function TaskForm({ onSave, initialTask }) {
             }
           }}
         />
+        <FormControl fullWidth size="small">
+          <InputLabel id="task-priority-label">Priority</InputLabel>
+          <Select
+            labelId="task-priority-label"
+            id="task-priority"
+            value={priority}
+            label="Priority"
+            onChange={e => setPriority(e.target.value)}
+            inputProps={{ 'data-testid': 'priority-select' }}
+            renderValue={value => <PriorityChip priority={value} />}
+            sx={{
+              borderRadius: 2,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#d9d9d9',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#1976d2',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#1976d2',
+              }
+            }}
+          >
+            {PRIORITY_OPTIONS.map(option => (
+              <MenuItem key={option.value} value={option.value}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: option.color,
+                      flexShrink: 0
+                    }}
+                  />
+                  <Typography variant="body2">{option.label}</Typography>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
         {error && <Typography color="error" sx={{ fontWeight: 500, fontSize: '0.875rem' }}>{error}</Typography>}
         <Box display="flex" gap={2}>
           <Button 
