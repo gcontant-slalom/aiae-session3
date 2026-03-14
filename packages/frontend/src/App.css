@@ -92,3 +92,34 @@ li:last-child {
   color: #d32f2f;
   font-weight: bold;
 }
+
+.priority-menu-item {
+  color: var(--priority-unselected-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.priority-menu-item .priority-option-dot {
+  background-color: var(--priority-unselected-color);
+}
+
+.priority-menu-item .priority-option-label {
+  color: inherit;
+  font-weight: 600;
+}
+
+.priority-menu-item:hover {
+  background-color: rgba(122, 122, 122, 0.08);
+}
+
+.priority-menu-item.Mui-selected {
+  background-color: rgba(7, 242, 230, 0.18);
+  color: var(--priority-selected-color);
+}
+
+.priority-menu-item.Mui-selected:hover {
+  background-color: rgba(7, 242, 230, 0.24);
+}
+
+.priority-menu-item.Mui-selected .priority-option-dot {
+  background-color: var(--priority-selected-color);
+}

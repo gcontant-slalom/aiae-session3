@@ -195,18 +195,18 @@ function TaskForm({ onSave, initialTask }) {
             }}
           >
             {PRIORITY_OPTIONS.map(option => (
-              <MenuItem key={option.value} value={option.value}>
+              <MenuItem key={option.value} value={option.value} className="priority-menu-item">
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box
+                    className="priority-option-dot"
                     sx={{
                       width: 10,
                       height: 10,
                       borderRadius: '50%',
-                      backgroundColor: option.color,
                       flexShrink: 0
                     }}
                   />
-                  <Typography variant="body2">{option.label}</Typography>
+                  <Typography variant="body2" className="priority-option-label">{option.label}</Typography>
                 </Box>
               </MenuItem>
             ))}
