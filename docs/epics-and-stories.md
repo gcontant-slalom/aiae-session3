@@ -1,0 +1,116 @@
+# MVP
+
+- Epic: Task Metadata Foundation
+  - Story: Add due date field to tasks
+    - Acceptance Criteria: A task can be created without a due date.
+    - Acceptance Criteria: A task can store a due date when the value is provided in `YYYY-MM-DD` format.
+    - Acceptance Criteria: A saved due date is available when the task is displayed later.
+    - Technical Requirements: Update `packages/frontend/src/TaskForm.js` to continue exposing a due date input and submit a normalized `due_date` value in task payloads.
+    - Technical Requirements: Update `packages/frontend/src/TaskList.js` to keep rendering persisted `due_date` values in the task list.
+    - Technical Requirements: Update `packages/backend/src/app.js` so `POST /api/tasks` and `PUT /api/tasks/:id` accept and persist `due_date`.
+  - Story: Add priority field to tasks
+    - Acceptance Criteria: A task supports only `P1`, `P2`, or `P3` as priority values.
+    - Acceptance Criteria: The selected priority is stored with the task.
+    - Acceptance Criteria: The saved priority is available when the task is displayed later.
+    - Technical Requirements: Add a priority control in `packages/frontend/src/TaskForm.js` and include `priority` in create and edit submissions.
+    - Technical Requirements: Render the saved `priority` value in `packages/frontend/src/TaskList.js`.
+    - Technical Requirements: Extend the tasks table in `packages/backend/src/app.js` with a `priority` column constrained to `P1`, `P2`, or `P3`.
+    - Technical Requirements: Update backend create, read, and update handlers in `packages/backend/src/app.js` to return `priority` in task payloads.
+  - Story: Default priority to P3
+    - Acceptance Criteria: When a task is created without an explicit priority, the stored priority is `P3`.
+    - Acceptance Criteria: Tasks created without a priority do not fail validation.
+    - Technical Requirements: Initialize the priority field in `packages/frontend/src/TaskForm.js` to `P3` for new tasks.
+    - Technical Requirements: Apply a backend default of `P3` in `packages/backend/src/app.js` when `priority` is missing from create or update requests.
+  - Story: Require title for task creation
+    - Acceptance Criteria: A task cannot be created without a title.
+    - Acceptance Criteria: Task creation succeeds when a title is provided.
+    - Technical Requirements: Keep client-side validation in `packages/frontend/src/TaskForm.js` so blank titles block submission and show an error message.
+    - Technical Requirements: Keep server-side validation in `packages/backend/src/app.js` so blank or missing titles return a `400` response.
+  - Story: Ignore invalid due date values
+    - Acceptance Criteria: A due date value that is not a valid `YYYY-MM-DD` date is treated as absent.
+    - Acceptance Criteria: An invalid due date does not block task creation or update.
+    - Technical Requirements: Add a date validation helper in `packages/backend/src/app.js` that accepts only valid ISO dates and converts invalid values to `null`.
+    - Technical Requirements: Ensure `packages/frontend/src/TaskForm.js` sends an empty due date when the input is cleared and does not fabricate invalid formatted dates.
+    - Technical Requirements: Add backend tests in `packages/backend/__tests__/tasks.test.js` for invalid due date handling on create and update.
+
+- Epic: Task Filtering Experience
+  - Story: Add All tasks filter
+    - Acceptance Criteria: Users can select an `All` filter view.
+    - Acceptance Criteria: The `All` filter shows all stored tasks regardless of due date.
+    - Technical Requirements: Add filter state management in `packages/frontend/src/App.js` and expose an `All` filter control in the UI.
+    - Technical Requirements: Update `packages/frontend/src/TaskList.js` to request tasks for the selected filter.
+    - Technical Requirements: Extend `GET /api/tasks` in `packages/backend/src/app.js` to support a filter mode that returns all tasks.
+  - Story: Add Today tasks filter
+    - Acceptance Criteria: Users can select a `Today` filter view.
+    - Acceptance Criteria: The `Today` filter includes only tasks with a due date equal to the current date.
+    - Technical Requirements: Add a `Today` filter control in `packages/frontend/src/App.js` or `packages/frontend/src/TaskList.js`.
+    - Technical Requirements: Pass the selected filter to the task fetch in `packages/frontend/src/TaskList.js`.
+    - Technical Requirements: Extend `GET /api/tasks` in `packages/backend/src/app.js` to return tasks due on the current date.
+  - Story: Add Overdue tasks filter
+    - Acceptance Criteria: Users can select an `Overdue` filter view.
+    - Acceptance Criteria: The `Overdue` filter includes only tasks with a due date earlier than the current date.
+    - Technical Requirements: Add an `Overdue` filter control in `packages/frontend/src/App.js` or `packages/frontend/src/TaskList.js`.
+    - Technical Requirements: Pass the selected filter to the task fetch in `packages/frontend/src/TaskList.js`.
+    - Technical Requirements: Extend `GET /api/tasks` in `packages/backend/src/app.js` to return tasks with due dates before the current date.
+  - Story: Show completed tasks in All view
+    - Acceptance Criteria: Completed tasks remain visible in the `All` filter.
+    - Acceptance Criteria: Incomplete tasks remain visible in the `All` filter.
+    - Technical Requirements: Ensure the `All` filter request from `packages/frontend/src/TaskList.js` does not exclude completed tasks.
+    - Technical Requirements: Ensure `GET /api/tasks` in `packages/backend/src/app.js` returns both completed and incomplete tasks for the default or `All` filter.
+  - Story: Hide completed tasks in Today view
+    - Acceptance Criteria: Completed tasks do not appear in the `Today` filter.
+    - Acceptance Criteria: Incomplete tasks due today do appear in the `Today` filter.
+    - Technical Requirements: Ensure the `Today` filter logic in `packages/frontend/src/TaskList.js` only renders incomplete tasks returned for that view.
+    - Technical Requirements: Ensure `GET /api/tasks` in `packages/backend/src/app.js` excludes completed tasks for the `Today` filter.
+  - Story: Hide completed tasks in Overdue view
+    - Acceptance Criteria: Completed tasks do not appear in the `Overdue` filter.
+    - Acceptance Criteria: Incomplete overdue tasks do appear in the `Overdue` filter.
+    - Technical Requirements: Ensure the `Overdue` filter logic in `packages/frontend/src/TaskList.js` only renders incomplete tasks returned for that view.
+    - Technical Requirements: Ensure `GET /api/tasks` in `packages/backend/src/app.js` excludes completed tasks for the `Overdue` filter.
+
+- Epic: Local Task Persistence
+  - Story: Persist due dates in local storage
+    - Acceptance Criteria: A valid due date remains available after the app is reloaded locally.
+    - Acceptance Criteria: No backend or external storage is required to retain the due date.
+    - Technical Requirements: Persist due dates in the existing local backend data store managed by `packages/backend/src/app.js` rather than adding any remote storage integration.
+    - Technical Requirements: Ensure `packages/frontend/src/TaskList.js` refetches tasks after create, update, and complete actions so persisted due dates are shown consistently.
+  - Story: Persist priorities in local storage
+    - Acceptance Criteria: A saved priority remains available after the app is reloaded locally.
+    - Acceptance Criteria: No backend or external storage is required to retain the priority.
+    - Technical Requirements: Persist priorities in the existing local backend data store managed by `packages/backend/src/app.js` rather than adding any remote storage integration.
+    - Technical Requirements: Ensure `packages/frontend/src/TaskList.js` refetches tasks after create and update actions so persisted priorities are shown consistently.
+
+# Post-MVP
+
+- Epic: Overdue Task Visibility
+  - Story: Highlight overdue tasks in the task list
+    - Acceptance Criteria: Incomplete overdue tasks have a visual treatment that distinguishes them from non-overdue tasks.
+    - Acceptance Criteria: Tasks that are not overdue do not use the overdue highlight treatment.
+    - Technical Requirements: Add overdue-state styling in `packages/frontend/src/TaskList.js` based on `due_date`, `completed`, and the current local date.
+    - Technical Requirements: If shared styles are needed, define them in `packages/frontend/src/App.css` or `packages/frontend/src/index.css` without changing non-overdue task behavior.
+
+- Epic: Task Ordering Enhancements
+  - Story: Sort overdue tasks first
+    - Acceptance Criteria: When sorting is applied, overdue tasks appear before tasks that are not overdue.
+    - Technical Requirements: Implement sort order in `GET /api/tasks` within `packages/backend/src/app.js` so overdue tasks are ordered ahead of non-overdue tasks.
+    - Technical Requirements: Keep `packages/frontend/src/TaskList.js` display order aligned with the backend response order.
+  - Story: Sort tasks by priority
+    - Acceptance Criteria: When tasks share the same overdue status, `P1` tasks appear before `P2`, and `P2` tasks appear before `P3`.
+    - Technical Requirements: Add priority-aware ordering logic to `GET /api/tasks` in `packages/backend/src/app.js` using explicit `P1`, `P2`, `P3` precedence.
+  - Story: Sort tasks by ascending due date
+    - Acceptance Criteria: When tasks share the same overdue status and priority, earlier due dates appear before later due dates.
+    - Technical Requirements: Extend `GET /api/tasks` ordering in `packages/backend/src/app.js` so due dates are sorted ascending after overdue status and priority.
+  - Story: Place undated tasks last
+    - Acceptance Criteria: Tasks without a due date appear after tasks with a due date when sorting is applied.
+    - Technical Requirements: Preserve an `undated last` ordering rule in `GET /api/tasks` within `packages/backend/src/app.js`.
+
+- Epic: Priority Visual Design
+  - Story: Add P1 priority badge color
+    - Acceptance Criteria: `P1` tasks display a red priority badge.
+    - Technical Requirements: Render a red priority badge for `P1` tasks in `packages/frontend/src/TaskList.js`.
+  - Story: Add P2 priority badge color
+    - Acceptance Criteria: `P2` tasks display an orange priority badge.
+    - Technical Requirements: Render an orange priority badge for `P2` tasks in `packages/frontend/src/TaskList.js`.
+  - Story: Add P3 priority badge color
+    - Acceptance Criteria: `P3` tasks display a gray priority badge.
+    - Technical Requirements: Render a gray priority badge for `P3` tasks in `packages/frontend/src/TaskList.js`.
